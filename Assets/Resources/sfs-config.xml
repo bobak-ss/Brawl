@@ -1,0 +1,24 @@
+﻿<SmartFoxConfig>
+    <host>127.0.0.1</host>
+    <port>9933</port>
+    <udpHost>127.0.0.1</udpHost>
+    <udpPort>9933</udpPort>
+    <zone>brawl</zone>
+    <debug>true</debug>
+    <httpPort>8080</httpPort>
+    <httpsPort>8443</httpsPort>
+    <useBlueBox>true</useBlueBox>
+    <blueBoxPollingRate>750</blueBoxPollingRate>
+</SmartFoxConfig>
+<!--
+<SmartFoxConfig>
+	<ip>127.0.0.1</ip>
+	<port>9933</port>
+	<udpIp>127.0.0.1</udpIp>
+	<udpPort>9933</udpPort>
+	<Host>127.0.0.1</Host>
+	<port>9933</port>
+	<udpHost>127.0.0.1</udpHost>
+	<udpHost>9933</udpHost>
+	<zone>brawl</zone>
+</SmartFoxConfig> -->
