@@ -24,14 +24,14 @@ public class SFSconnect : MonoBehaviour {
 		
 		sfs = new SmartFox ();
 		sfs.ThreadSafeMode = true;
-		sfs.AddEventListener (SFSEvent.CONNECTION, OnConnection);
-		sfs.AddEventListener (SFSEvent.CONNECTION_LOST, OnConnectionLost);
-		sfs.AddEventListener (SFSEvent.LOGIN, OnLogin);
-		sfs.AddEventListener (SFSEvent.LOGIN_ERROR, onLoginError);
-		sfs.AddEventListener (SFSEvent.CONFIG_LOAD_SUCCESS, onConfigLoad);
-		sfs.AddEventListener (SFSEvent.CONFIG_LOAD_FAILURE, onConfigFail);
-		sfs.AddEventListener (SFSEvent.ROOM_JOIN, OnJoinRoom);
-		sfs.AddEventListener (SFSEvent.ROOM_JOIN_ERROR, OnJoinRoomError);
+		sfs.AddEventListener (SFSEvent.CONNECTION, ConnectionHandler);
+		sfs.AddEventListener (SFSEvent.CONNECTION_LOST, ConnectionLostHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_SUCCESS, ConfigLoadHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_FAILURE, ConfigLoadFailHandler);
+        sfs.AddEventListener (SFSEvent.LOGIN, LoginHandler);
+		sfs.AddEventListener (SFSEvent.LOGIN_ERROR, LoginErrorHandler);
+		sfs.AddEventListener (SFSEvent.ROOM_JOIN, RoomJoinHandler);
+		sfs.AddEventListener (SFSEvent.ROOM_JOIN_ERROR, RoomJoinErrorHandler);
 		sfs.AddEventListener (SFSEvent.PUBLIC_MESSAGE, PublicMessageHandler);
 
 		if (UseConfigFile) 
@@ -57,64 +57,78 @@ public class SFSconnect : MonoBehaviour {
             sfs.Disconnect();
     }
 
-
     // Handlers
-    void PublicMessageHandler(BaseEvent e)
-	{
-		Debug.Log ("PublicMessage");
-		Room room = (Room)e.Params ["room"];
-		User sender = (User)e.Params ["sender"];
-		Debug.Log("[" + room.Name + "] " + sender.Name + ": " + e.Params["message"]); 
-	}
+
+    // Connection Handlers
+    void ConnectionHandler(BaseEvent e)
+    {
+        if ((bool)e.Params["success"])
+        {
+            Debug.Log("Successfully connected");
+            if (UseConfigFile)
+                ZoneName = sfs.Config.Zone;
+            sfs.Send(new LoginRequest(UserName, Password, ZoneName));
+        }
+        else
+        {
+            Debug.Log("Failed to connect");
+            sfs.RemoveAllEventListeners();
+        }
+    }
+    void ConnectionLostHandler(BaseEvent e)
+    {
+        Debug.Log("Connection lost!");
+        sfs.RemoveAllEventListeners();
+    }
+
+    // Config file load Handlers
+    void ConfigLoadHandler(BaseEvent e)
+    {
+        Debug.Log("Loaded Config File Successfully");
+        sfs.Connect(sfs.Config.Host, sfs.Config.Port);
+    }
+    void ConfigLoadFailHandler(BaseEvent e)
+    {
+        Debug.Log("Loading Config File Failed!");
+    }
+
+    // Login Handlers
+    void LoginHandler(BaseEvent e)
+    {
+        Debug.Log("Successfully loged into zone " + e.Params["user"]);
+
+        string roomName = "GameRoom";
+        // We either create the Game Room or join it if it exists already
+        if (sfs.RoomManager.ContainsRoom(roomName))
+            sfs.Send(new JoinRoomRequest(roomName));
+        else
+        {
+            RoomSettings settings = new RoomSettings(roomName);
+            settings.MaxUsers = 40;
+            sfs.Send(new CreateRoomRequest(settings, true));
+        }
+    }
+    void LoginErrorHandler(BaseEvent e)
+    {
+        Debug.Log("Failed to login! Errore Code:" + e.Params["errorCode"] + " - " + e.Params["errorMessage"]);
+    }
 
     // Room Join Handlers
-	void OnJoinRoom(BaseEvent e)
+    void RoomJoinHandler(BaseEvent e)
 	{
 		Debug.Log ("Joined Room: " + e.Params ["room"]);
 		sfs.Send(new PublicMessageRequest("Hello World"));
 	}
-	void OnJoinRoomError(BaseEvent e)
+	void RoomJoinErrorHandler(BaseEvent e)
 	{
 		Debug.Log ("Join room failed! ErrorCode:" + e.Params ["error"] + " - " + e.Params ["errorMessage"]);
-	}
-
-    // Config file load Handlers
-	void onConfigLoad(BaseEvent e)
-	{
-		Debug.Log ("Loaded Config File Successfully");
-		sfs.Connect (sfs.Config.Host, sfs.Config.Port);
-	}
-	void onConfigFail(BaseEvent e)
-	{
-		Debug.Log ("Loading Config File Failed!");
-	}
-
-    // Login Handlers
-	void OnLogin(BaseEvent e)
-	{
-		Debug.Log ("Successfully loged into zone " +  e.Params["user"]);
-		sfs.Send (new JoinRoomRequest (RoomName));
-	}
-	void onLoginError(BaseEvent e)
-	{
-		Debug.Log ("Failed to login! Errore Code:"+e.Params["errorCode"]+" - "+e.Params["errorMessage"]);
-	}
-
-    // Connection Handlers
-	void OnConnection(BaseEvent e)
-	{
-		if ((bool)e.Params ["success"]) 
-		{
-			Debug.Log ("Successfully connected");
-			if (UseConfigFile)
-				ZoneName = sfs.Config.Zone;
-			sfs.Send (new LoginRequest (UserName, Password, ZoneName));
-		}
-		else
-			Debug.Log ("Failed to connect");
     }
-    void OnConnectionLost(BaseEvent e)
+  
+    void PublicMessageHandler(BaseEvent e)
     {
-        Debug.Log("Connection lost!");
+        Debug.Log("PublicMessage");
+        Room room = (Room)e.Params["room"];
+        User sender = (User)e.Params["sender"];
+        Debug.Log("[" + room.Name + "] " + sender.Name + ": " + e.Params["message"]);
     }
 }
