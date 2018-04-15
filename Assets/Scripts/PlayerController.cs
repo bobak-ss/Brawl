@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityStandardAssets.CrossPlatformInput;
 
 public class PlayerController : MonoBehaviour 
 {
@@ -26,8 +27,9 @@ public class PlayerController : MonoBehaviour
 	void Update () 
 	{
 		isGrounded = Physics2D.Linecast (myTrans.position, groundTrans.position, layerMask);
-		move(Input.GetAxisRaw("Horizontal"));
-		if (Input.GetButtonDown ("Vertical"))
+
+		move(CrossPlatformInputManager.GetAxisRaw("Horizontal"));
+		if (CrossPlatformInputManager.GetButton ("Jump"))
 		{
 			jump ();
 		}

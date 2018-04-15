@@ -48,10 +48,18 @@ public class SFSconnect : MonoBehaviour {
 
 	void Update () 
 	{
-		sfs.ProcessEvents ();	
-	}
+		sfs.ProcessEvents ();
+    }
 
-	void PublicMessageHandler(BaseEvent e)
+    void OnApplicationOutput()
+    {
+        if (sfs.IsConnected)
+            sfs.Disconnect();
+    }
+
+
+    // Handlers
+    void PublicMessageHandler(BaseEvent e)
 	{
 		Debug.Log ("PublicMessage");
 		Room room = (Room)e.Params ["room"];
@@ -59,6 +67,7 @@ public class SFSconnect : MonoBehaviour {
 		Debug.Log("[" + room.Name + "] " + sender.Name + ": " + e.Params["message"]); 
 	}
 
+    // Room Join Handlers
 	void OnJoinRoom(BaseEvent e)
 	{
 		Debug.Log ("Joined Room: " + e.Params ["room"]);
@@ -69,11 +78,7 @@ public class SFSconnect : MonoBehaviour {
 		Debug.Log ("Join room failed! ErrorCode:" + e.Params ["error"] + " - " + e.Params ["errorMessage"]);
 	}
 
-	void OnConnectionLost(BaseEvent e)
-	{
-		Debug.Log ("Connection lost!");
-	}
-
+    // Config file load Handlers
 	void onConfigLoad(BaseEvent e)
 	{
 		Debug.Log ("Loaded Config File Successfully");
@@ -84,6 +89,7 @@ public class SFSconnect : MonoBehaviour {
 		Debug.Log ("Loading Config File Failed!");
 	}
 
+    // Login Handlers
 	void OnLogin(BaseEvent e)
 	{
 		Debug.Log ("Successfully loged into zone " +  e.Params["user"]);
@@ -94,6 +100,7 @@ public class SFSconnect : MonoBehaviour {
 		Debug.Log ("Failed to login! Errore Code:"+e.Params["errorCode"]+" - "+e.Params["errorMessage"]);
 	}
 
+    // Connection Handlers
 	void OnConnection(BaseEvent e)
 	{
 		if ((bool)e.Params ["success"]) 
@@ -105,11 +112,9 @@ public class SFSconnect : MonoBehaviour {
 		}
 		else
 			Debug.Log ("Failed to connect");
-	}
-
-	void OnApplicationOutput()
-	{
-		if (sfs.IsConnected)
-			sfs.Disconnect ();
-	}
+    }
+    void OnConnectionLost(BaseEvent e)
+    {
+        Debug.Log("Connection lost!");
+    }
 }
