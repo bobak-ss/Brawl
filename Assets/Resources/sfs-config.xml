@@ -1,7 +1,9 @@
 ﻿<SmartFoxConfig>
-    <host>127.0.0.1</host>
+  <!--<host>127.0.0.1</host> -->
+    <host>192.168.1.114</host>
     <port>9933</port>
-    <udpHost>127.0.0.1</udpHost>
+  <!--<udpHost>127.0.0.1</udpHost>--> 
+    <udpHost>192.168.1.114</udpHost>
     <udpPort>9933</udpPort>
     <zone>brawl</zone>
     <debug>true</debug>
