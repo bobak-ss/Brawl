@@ -8,6 +8,8 @@ using Sfs2X.Entities;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System;
+using Sfs2X.Requests.MMO;
+using Sfs2X.Entities.Data;
 
 public class Connection : MonoBehaviour {
 	public string configFile = "sfs-config.xml";
@@ -43,16 +45,16 @@ public class Connection : MonoBehaviour {
         sfs.ThreadSafeMode = true;
 
         // SmartFox Event listeners
-        sfs.AddEventListener(SFSEvent.CONNECTION, ConnectionHandler);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, ConnectionLostHandler);
-        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_SUCCESS, ConfigLoadHandler);
-        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_FAILURE, ConfigLoadFailHandler);
-        sfs.AddEventListener(SFSEvent.LOGIN, LoginHandler);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, LoginErrorHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_ADD, RoomAddHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_CREATION_ERROR, RoomCreationErrorHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_JOIN, RoomJoinHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_JOIN_ERROR, RoomJoinErrorHandler);
+        sfs.AddEventListener(SFSEvent.CONNECTION, connectionHandler);
+        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, connectionLostHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_SUCCESS, configLoadHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_FAILURE, configLoadFailHandler);
+        sfs.AddEventListener(SFSEvent.LOGIN, loginHandler);
+        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, loginErrorHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_ADD, roomAddHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_CREATION_ERROR, roomCreationErrorHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_JOIN, roomJoinHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_JOIN_ERROR, roomJoinErrorHandler);
         
         if (UseConfigFile)
             sfs.LoadConfig(Application.dataPath + "/Resources/sfs-config.xml", true);
@@ -75,16 +77,16 @@ public class Connection : MonoBehaviour {
         sfs.ThreadSafeMode = true;
 
         // SmartFox Event listeners
-        sfs.AddEventListener(SFSEvent.CONNECTION, ConnectionHandler);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, ConnectionLostHandler);
-        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_SUCCESS, ConfigLoadHandler);
-        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_FAILURE, ConfigLoadFailHandler);
-        sfs.AddEventListener(SFSEvent.LOGIN, LoginHandler);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, LoginErrorHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_ADD, RoomAddHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_CREATION_ERROR, RoomCreationErrorHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_JOIN, RoomJoinHandler);
-        sfs.AddEventListener(SFSEvent.ROOM_JOIN_ERROR, RoomJoinErrorHandler);
+        sfs.AddEventListener(SFSEvent.CONNECTION, connectionHandler);
+        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, connectionLostHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_SUCCESS, configLoadHandler);
+        sfs.AddEventListener(SFSEvent.CONFIG_LOAD_FAILURE, configLoadFailHandler);
+        sfs.AddEventListener(SFSEvent.LOGIN, loginHandler);
+        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, loginErrorHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_ADD, roomAddHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_CREATION_ERROR, roomCreationErrorHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_JOIN, roomJoinHandler);
+        sfs.AddEventListener(SFSEvent.ROOM_JOIN_ERROR, roomJoinErrorHandler);
 
         serverIP = inputField.text;
         if (UseConfigFile)
@@ -97,7 +99,7 @@ public class Connection : MonoBehaviour {
     // Handlers
 
     // Connection Handlers
-    void ConnectionHandler(BaseEvent e)
+    void connectionHandler(BaseEvent e)
     {
         if ((bool)e.Params["success"])
         {
@@ -113,28 +115,28 @@ public class Connection : MonoBehaviour {
         }
         else
         {
-            RetrySrvFail("Failed to connect");
+            retrySrvFail("Failed to connect");
         }
     }
 
-    void ConnectionLostHandler(BaseEvent e)
+    void connectionLostHandler(BaseEvent e)
     {
-        RetrySrvFail("Connection lost!");
+        retrySrvFail("Connection lost!");
     }
 
     // Config file load Handlers
-    void ConfigLoadHandler(BaseEvent e)
+    void configLoadHandler(BaseEvent e)
     {
         trace("Loaded Config File Successfully");
         sfs.Connect(sfs.Config.Host, sfs.Config.Port);
     }
-    void ConfigLoadFailHandler(BaseEvent e)
+    void configLoadFailHandler(BaseEvent e)
     {
-        RetrySrvFail("Loading Config File Failed!");
+        retrySrvFail("Loading Config File Failed!");
     }
 
     // Login Handlers
-    void LoginHandler(BaseEvent e)
+    void loginHandler(BaseEvent e)
     {
         trace("Successfully logged into zone! user: " + e.Params["user"]);
 
@@ -149,17 +151,20 @@ public class Connection : MonoBehaviour {
         else
         {
             trace("GameRoom does not exists! creating the room... Joining the room...");
-            RoomSettings settings = new RoomSettings(roomName);
-            settings.MaxUsers = 2;
+            MMORoomSettings settings = new MMORoomSettings(roomName);
+            settings.DefaultAOI = new Vec3D(200f, 100f, 1f);
+            settings.MapLimits = new MapLimits(new Vec3D(-225f, -125f, 1f), new Vec3D(225f, 125f, 1f));
+            settings.MaxUsers = 10;
+            settings.Extension = new RoomExtension("Brawl", "com.xplosion.BrawlExtension");
             sfs.Send(new CreateRoomRequest(settings, true));
         }
     }
-    void LoginErrorHandler(BaseEvent e)
+    void loginErrorHandler(BaseEvent e)
     {
-        RetrySrvFail("Failed to login! Errore Code:" + e.Params["errorCode"] + " - " + e.Params["errorMessage"]);
+        retrySrvFail("Failed to login! Errore Code:" + e.Params["errorCode"] + " - " + e.Params["errorMessage"]);
     }
     // Room Handlers
-    private void RoomJoinHandler(BaseEvent e)
+    private void roomJoinHandler(BaseEvent e)
     {
         trace("Joined Room: " + e.Params["room"]);
 
@@ -168,17 +173,17 @@ public class Connection : MonoBehaviour {
         
         SceneManager.LoadScene("GameStaging");
     }
-    private void RoomJoinErrorHandler(BaseEvent e)
+    private void roomJoinErrorHandler(BaseEvent e)
     {
-        RetrySrvFail("ERROR: Join room failed! ErrorCode:" + e.Params["error"] + " - " + e.Params["errorMessage"]);
+        retrySrvFail("ERROR: Join room failed! ErrorCode:" + e.Params["error"] + " - " + e.Params["errorMessage"]);
     }
-    private void RoomAddHandler(BaseEvent e)
+    private void roomAddHandler(BaseEvent e)
     {
-        RetrySrvFail("Adding room[" + e.Params["room"] + "] was successfull!");
+        retrySrvFail("Adding room[" + e.Params["room"] + "] was successfull!");
     }
-    private void RoomCreationErrorHandler(BaseEvent e)
+    private void roomCreationErrorHandler(BaseEvent e)
     {
-        RetrySrvFail("ERROR: Creating room[" + e.Params["room"] + "] was NOT successfull!\nErrorCode:" + e.Params["error"] + " - " + e.Params["errorMessage"]);
+        retrySrvFail("ERROR: Creating room[" + e.Params["room"] + "] was NOT successfull!\nErrorCode:" + e.Params["error"] + " - " + e.Params["errorMessage"]);
     }
 
     public static Text trace(string textString)
@@ -197,7 +202,7 @@ public class Connection : MonoBehaviour {
         return log;
     }
 
-    private void RetrySrvFail(String errorMsg)
+    private void retrySrvFail(String errorMsg)
     {
         trace(errorMsg);
         errorText.text = errorMsg;

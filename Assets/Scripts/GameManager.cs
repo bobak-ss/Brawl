@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
     private GameObject remotePlayer = null;
     //private bool remotePlayerIsGrounded = true;
     private Rigidbody2D remotePlayerBody = null;
-    //private Transform remotePlayerTrans = null;
+    private Transform remotePlayerTrans = null;
     //private Transform remotePlayerGround = null;
     private Animator remotePlayerAnimator = null;
     static private Text log;
@@ -63,12 +63,13 @@ public class GameManager : MonoBehaviour
         {
             trace("sfs is connected in game manager");
             
-            sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, UserEnterRoomHandler);
-            sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, UserExitRoomHandler);
-            sfs.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, UserVarUpdateHandler);
-            sfs.AddEventListener(SFSEvent.PUBLIC_MESSAGE, PublicMessageHandler);
-            sfs.AddEventListener(SFSEvent.OBJECT_MESSAGE, MessageHandler);
-            sfs.AddEventListener(SFSEvent.CONNECTION_LOST, LostConnectionHandler);
+            sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, userEnterRoomHandler);
+            sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, userExitRoomHandler);
+            sfs.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, userVarUpdateHandler);
+            sfs.AddEventListener(SFSEvent.PROXIMITY_LIST_UPDATE, proximityListUpdateHandler);
+            sfs.AddEventListener(SFSEvent.PUBLIC_MESSAGE, publicMessageHandler);
+            sfs.AddEventListener(SFSEvent.OBJECT_MESSAGE, messageHandler);
+            sfs.AddEventListener(SFSEvent.CONNECTION_LOST, lostConnectionHandler);
         }
 
         if (localPlayer == null)
@@ -106,7 +107,10 @@ public class GameManager : MonoBehaviour
                 if (remotePlayerBody.velocity.x == 0 && remotePlayerBody.velocity.y == 0)
                     remotePlayerAnimator.SetBool("Running", false);
                 else
+                {
                     remotePlayerAnimator.SetBool("Running", true);
+                    remotePlayerTrans.localScale = new Vector3((remotePlayerBody.velocity.x < 0) ? -1 : 1, 1, 1);
+                }
             }
         }
     }
@@ -122,7 +126,7 @@ public class GameManager : MonoBehaviour
         userVariables.Add(new SFSUserVariable("posy", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
-    private void SpawnRemotePlayer(SFSUser user)
+    private void SpawnRemotePlayer(User user)
     {
         remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("posx").GetDoubleValue(), (float)user.GetVariable("posy").GetDoubleValue() );
         remotePlayer = GameObject.Instantiate(remotePlayerObj);
@@ -141,6 +145,7 @@ public class GameManager : MonoBehaviour
         Vector2 moveVel = localPlayerBody.velocity;
         moveVel.x = speed * input;
         localPlayerBody.velocity = moveVel;
+        localPlayerTrans.localScale = new Vector3((moveVel.x < 0) ? -1 : 1, 1, 1);
 
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("velx", (double)moveVel.x));
@@ -164,7 +169,7 @@ public class GameManager : MonoBehaviour
     // SmartFoxServer event listeners
     //----------------------------------------------------------
 
-    private void UserEnterRoomHandler(BaseEvent evt)
+    private void userEnterRoomHandler(BaseEvent evt)
     {
         SFSUser user = (SFSUser)evt.Params["user"];
         trace("(" + user.Name + ") Entered the room!");
@@ -178,14 +183,14 @@ public class GameManager : MonoBehaviour
         SpawnRemotePlayer(user);
     }
 
-    private void UserExitRoomHandler(BaseEvent evt)
+    private void userExitRoomHandler(BaseEvent evt)
     {
         SFSUser user = (SFSUser)evt.Params["user"];
         trace("(" + user.Name + ") Exited the room!");
         Destroy(remotePlayer);
     }
     
-    private void UserVarUpdateHandler(BaseEvent evt)
+    private void userVarUpdateHandler(BaseEvent evt)
     {
         List<string> changedVars = (List<string>)evt.Params["changedVars"];
 
@@ -204,8 +209,24 @@ public class GameManager : MonoBehaviour
         if (changedVars.Contains("vely"))
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
     }
+    private void proximityListUpdateHandler(BaseEvent e)
+    {
+        var addedUsers = (List<User>) e.Params["addedUsers"];
+        var removedUsers = (List<User>) e.Params["removedUsers"];
 
-    private void PublicMessageHandler(BaseEvent e)
+        // Handle new players
+        foreach (var user in addedUsers)
+        {
+            SpawnRemotePlayer(user);
+        }
+
+        // Handle removed players
+        foreach (var user in removedUsers)
+        {
+            Destroy(remotePlayer);
+        }
+    }
+    private void publicMessageHandler(BaseEvent e)
     {
         //Debug.Log("!!! New PublicMessage !!!");
         Room room = (Room)e.Params["room"];
@@ -214,14 +235,14 @@ public class GameManager : MonoBehaviour
         trace(msg);
     }
 
-    private void LostConnectionHandler(BaseEvent evt)
+    private void lostConnectionHandler(BaseEvent evt)
     {
         trace("Lost Connection");
         sfs.RemoveAllEventListeners();
         SceneManager.LoadScene("Connection");
     }
 
-    private void MessageHandler(BaseEvent evt)
+    private void messageHandler(BaseEvent evt)
     {
         trace("Message Handler");
     }
