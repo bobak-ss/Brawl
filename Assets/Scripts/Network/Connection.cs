@@ -22,6 +22,7 @@ public class Connection : MonoBehaviour {
 	public string ZoneName = "brawl";
 
 	public static SmartFox sfs;
+    public static User localUser = null;
     
     static private Text log;
     private GameObject popUp;
@@ -98,6 +99,17 @@ public class Connection : MonoBehaviour {
     }
     // Handlers
 
+    // Config file load Handlers
+    void configLoadHandler(BaseEvent e)
+    {
+        trace("Loaded Config File Successfully");
+        sfs.Connect(sfs.Config.Host, sfs.Config.Port);
+    }
+    void configLoadFailHandler(BaseEvent e)
+    {
+        retrySrvFail("Loading Config File Failed!");
+    }
+
     // Connection Handlers
     void connectionHandler(BaseEvent e)
     {
@@ -124,17 +136,6 @@ public class Connection : MonoBehaviour {
         retrySrvFail("Connection lost!");
     }
 
-    // Config file load Handlers
-    void configLoadHandler(BaseEvent e)
-    {
-        trace("Loaded Config File Successfully");
-        sfs.Connect(sfs.Config.Host, sfs.Config.Port);
-    }
-    void configLoadFailHandler(BaseEvent e)
-    {
-        retrySrvFail("Loading Config File Failed!");
-    }
-
     // Login Handlers
     void loginHandler(BaseEvent e)
     {
@@ -158,6 +159,8 @@ public class Connection : MonoBehaviour {
             settings.Extension = new RoomExtension("Brawl", "com.xplosion.BrawlExtension");
             sfs.Send(new CreateRoomRequest(settings, true));
         }
+
+        localUser = sfs.UserManager.GetUserByName(UserName);
     }
     void loginErrorHandler(BaseEvent e)
     {

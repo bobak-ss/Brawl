@@ -29,17 +29,10 @@ public class GameManager : MonoBehaviour
 
     private SmartFox sfs;
     private GameObject localPlayer = null;
-    private bool localPlayerIsGrounded = true;
-	private Rigidbody2D localPlayerBody = null;
-    private Transform localPlayerTrans = null;
-    private Transform localPlayerGround = null;
-    private Animator localPlayerAnimator = null;
+    private Boolean localPlayerIsGrounded = true;
+    private Boolean localPlayerDirection = true;
     private GameObject remotePlayer = null;
-    //private bool remotePlayerIsGrounded = true;
-    private Rigidbody2D remotePlayerBody = null;
-    private Transform remotePlayerTrans = null;
-    //private Transform remotePlayerGround = null;
-    private Animator remotePlayerAnimator = null;
+    private Boolean remotePlayerDirection = true;
     static private Text log;
 
     //----------------------------------------------------------
@@ -75,12 +68,6 @@ public class GameManager : MonoBehaviour
         if (localPlayer == null)
         {
             SpawnLocalPlayer();
-
-            // Initializations
-            localPlayerBody = localPlayer.GetComponent<Rigidbody2D>();
-            localPlayerTrans = localPlayer.GetComponent<Transform>();
-            localPlayerAnimator = localPlayer.GetComponent<Animator>();
-            localPlayerGround = GameObject.Find(localPlayer.name + "/isGrounded").transform;
         }
     }
 
@@ -91,25 +78,24 @@ public class GameManager : MonoBehaviour
             sfs.ProcessEvents();
             if (localPlayer != null)
             {
-                localPlayerIsGrounded = Physics2D.Linecast(localPlayerTrans.position, localPlayerGround.position, layerMask);
+                localPlayerIsGrounded = Physics2D.Linecast(localPlayer.GetComponent<Transform>().position, localPlayer.transform.FindChild("isGrounded").transform.position, layerMask);
 
                 move(CrossPlatformInputManager.GetAxisRaw("Horizontal"));
                 if (CrossPlatformInputManager.GetButtonDown("Jump"))
                     jump();
 
-                if (localPlayerBody.velocity.x == 0 && localPlayerBody.velocity.y == 0)
-                    localPlayerAnimator.SetBool("Running", false);
+                if (localPlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && localPlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
+                    localPlayer.GetComponent<Animator>().SetBool("Running", false);
                 else
-                    localPlayerAnimator.SetBool("Running", true);
+                    localPlayer.GetComponent<Animator>().SetBool("Running", true);
             }
             if (remotePlayer != null)
             {
-                if (remotePlayerBody.velocity.x == 0 && remotePlayerBody.velocity.y == 0)
-                    remotePlayerAnimator.SetBool("Running", false);
+                if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
+                    remotePlayer.GetComponent<Animator>().SetBool("Running", false);
                 else
                 {
-                    remotePlayerAnimator.SetBool("Running", true);
-                    remotePlayerTrans.localScale = new Vector3((remotePlayerBody.velocity.x < 0) ? -1 : 1, 1, 1);
+                    remotePlayer.GetComponent<Animator>().SetBool("Running", true);
                 }
             }
         }
@@ -120,6 +106,7 @@ public class GameManager : MonoBehaviour
     {
         localPlayer = GameObject.Instantiate(localPlayerObj);
         localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-190f, 190f), 150f, 0);
+        localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("posx", (double)localPlayer.transform.position.x));
@@ -130,22 +117,25 @@ public class GameManager : MonoBehaviour
     {
         remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("posx").GetDoubleValue(), (float)user.GetVariable("posy").GetDoubleValue() );
         remotePlayer = GameObject.Instantiate(remotePlayerObj);
-
-        // Initializations
-        remotePlayerBody = remotePlayer.GetComponent<Rigidbody2D>();
-        //remotePlayerTrans = remotePlayer.GetComponent<Transform>();
-        remotePlayerAnimator = remotePlayer.GetComponent<Animator>();
-        //remotePlayerGround = GameObject.Find(remotePlayer.name + "/isGrounded").transform;
+        remotePlayer.transform.FindChild("name").GetComponent<Text>().text = user.Name;
     }
 
 
     // ------------------------ Player Action Methods ------------------------
     public void move(float input)
     {
-        Vector2 moveVel = localPlayerBody.velocity;
+        Vector2 moveVel = localPlayer.GetComponent<Rigidbody2D>().velocity;
         moveVel.x = speed * input;
-        localPlayerBody.velocity = moveVel;
-        localPlayerTrans.localScale = new Vector3((moveVel.x < 0) ? -1 : 1, 1, 1);
+        localPlayer.GetComponent<Rigidbody2D>().velocity = moveVel;
+
+        if (moveVel.x != 0)
+            localPlayerDirection = (moveVel.x < 0) ? false : true;
+
+        Vector3 trueDirection = new Vector3(localPlayerDirection ? 1 : -1, 1, 1);
+        // Redirecting player direction
+        localPlayer.GetComponent<Transform>().localScale = trueDirection;
+        // Redirecting player name direction
+        localPlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
 
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("velx", (double)moveVel.x));
@@ -154,11 +144,11 @@ public class GameManager : MonoBehaviour
     }
     public void jump()
     {
-        Vector2 moveVel = localPlayerBody.velocity;
+        Vector2 moveVel = localPlayer.GetComponent<Rigidbody2D>().velocity;
         
         if (localPlayerIsGrounded)
-            moveVel = new Vector3(localPlayerBody.velocity.x, localPlayerBody.velocity.y + jumpVelocity);
-        localPlayerBody.velocity = moveVel;
+            moveVel = new Vector3(localPlayer.GetComponent<Rigidbody2D>().velocity.x, localPlayer.GetComponent<Rigidbody2D>().velocity.y + jumpVelocity);
+        localPlayer.GetComponent<Rigidbody2D>().velocity = moveVel;
         
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("vely", (double)moveVel.y));
@@ -208,6 +198,13 @@ public class GameManager : MonoBehaviour
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
         if (changedVars.Contains("vely"))
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
+
+        // Redirecting player direction
+        if (user.GetVariable("velx").GetDoubleValue() != 0)
+            remotePlayerDirection = (user.GetVariable("velx").GetDoubleValue() < 0) ? false : true;
+        Vector3 trueDirection = new Vector3(remotePlayerDirection ? 1 : -1, 1, 1);
+        remotePlayer.GetComponent<Transform>().localScale = trueDirection;
+        remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
     }
     private void proximityListUpdateHandler(BaseEvent e)
     {
