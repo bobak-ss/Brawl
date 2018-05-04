@@ -31,9 +31,8 @@ public class GameManager : MonoBehaviour
     private GameObject localPlayer = null;
     private Boolean localPlayerIsGrounded = true;
     private Boolean localPlayerDirection = true;
-    private GameObject remotePlayer = null;
-    private Boolean remotePlayerDirection = true;
-    static private Text log;
+    private Dictionary<User, GameObject> remotePlayers = new Dictionary<User, GameObject>();
+    private static Text log;
 
     //----------------------------------------------------------
     // Unity calback methods
@@ -89,15 +88,6 @@ public class GameManager : MonoBehaviour
                 else
                     localPlayer.GetComponent<Animator>().SetBool("Running", true);
             }
-            if (remotePlayer != null)
-            {
-                if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
-                    remotePlayer.GetComponent<Animator>().SetBool("Running", false);
-                else
-                {
-                    remotePlayer.GetComponent<Animator>().SetBool("Running", true);
-                }
-            }
         }
     }
 
@@ -115,9 +105,13 @@ public class GameManager : MonoBehaviour
     }
     private void SpawnRemotePlayer(User user)
     {
+        GameObject remotePlayer;
+
+        // Get random position for new user
         remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("posx").GetDoubleValue(), (float)user.GetVariable("posy").GetDoubleValue() );
         remotePlayer = GameObject.Instantiate(remotePlayerObj);
         remotePlayer.transform.FindChild("name").GetComponent<Text>().text = user.Name;
+        remotePlayers.Add(user, remotePlayer);
     }
 
 
@@ -164,20 +158,24 @@ public class GameManager : MonoBehaviour
         SFSUser user = (SFSUser)evt.Params["user"];
         trace("(" + user.Name + ") Entered the room!");
 
-        // we set local player vars to let new entered user
+        SpawnRemotePlayer(user);
+
+        // we update local player vars to let new entered user know where we are
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("posx", (double)localPlayer.transform.position.x));
         userVariables.Add(new SFSUserVariable("posy", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
-
-        SpawnRemotePlayer(user);
     }
 
     private void userExitRoomHandler(BaseEvent evt)
     {
         SFSUser user = (SFSUser)evt.Params["user"];
         trace("(" + user.Name + ") Exited the room!");
-        Destroy(remotePlayer);
+        if (remotePlayers.ContainsKey(user))
+        {
+            Destroy(remotePlayers[user]);
+            remotePlayers.Remove(user);
+        }
     }
     
     private void userVarUpdateHandler(BaseEvent evt)
@@ -185,11 +183,18 @@ public class GameManager : MonoBehaviour
         List<string> changedVars = (List<string>)evt.Params["changedVars"];
 
         SFSUser user = (SFSUser)evt.Params["user"];
+        GameObject remotePlayer;
+        Boolean remotePlayerDirection = true;
 
         if (user == sfs.MySelf) return;
 
-        if (remotePlayer == null)
+        if (remotePlayers.ContainsKey(user))
+            remotePlayer = remotePlayers[user];
+        else
+        {
             SpawnRemotePlayer(user);
+            remotePlayer = remotePlayers[user];
+        }
 
         //trace("(" + user.Name + ") Changed its vars!");
         if (changedVars.Contains("posx") || changedVars.Contains("posy"))
@@ -198,6 +203,13 @@ public class GameManager : MonoBehaviour
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
         if (changedVars.Contains("vely"))
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
+
+        if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
+            remotePlayer.GetComponent<Animator>().SetBool("Running", false);
+        else
+        {
+            remotePlayer.GetComponent<Animator>().SetBool("Running", true);
+        }
 
         // Redirecting player direction
         if (user.GetVariable("velx").GetDoubleValue() != 0)
@@ -220,7 +232,7 @@ public class GameManager : MonoBehaviour
         // Handle removed players
         foreach (var user in removedUsers)
         {
-            Destroy(remotePlayer);
+            remotePlayers.Remove(user);
         }
     }
     private void publicMessageHandler(BaseEvent e)
