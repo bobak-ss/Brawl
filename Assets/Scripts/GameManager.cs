@@ -99,8 +99,8 @@ public class GameManager : MonoBehaviour
         localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
         List<UserVariable> userVariables = new List<UserVariable>();
-        userVariables.Add(new SFSUserVariable("posx", (double)localPlayer.transform.position.x));
-        userVariables.Add(new SFSUserVariable("posy", (double)localPlayer.transform.position.y));
+        userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
+        userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
     private void SpawnRemotePlayer(User user)
@@ -108,12 +108,11 @@ public class GameManager : MonoBehaviour
         GameObject remotePlayer;
 
         // Get random position for new user
-        remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("posx").GetDoubleValue(), (float)user.GetVariable("posy").GetDoubleValue() );
+        remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue() );
         remotePlayer = GameObject.Instantiate(remotePlayerObj);
         remotePlayer.transform.FindChild("name").GetComponent<Text>().text = user.Name;
         remotePlayers.Add(user, remotePlayer);
     }
-
 
     // ------------------------ Player Action Methods ------------------------
     public void move(float input)
@@ -132,8 +131,8 @@ public class GameManager : MonoBehaviour
         localPlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
 
         List<UserVariable> userVariables = new List<UserVariable>();
-        userVariables.Add(new SFSUserVariable("velx", (double)moveVel.x));
-        userVariables.Add(new SFSUserVariable("vely", (double)moveVel.y));
+        userVariables.Add(new SFSUserVariable("vx", (double)moveVel.x));
+        userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
     public void jump()
@@ -145,7 +144,7 @@ public class GameManager : MonoBehaviour
         localPlayer.GetComponent<Rigidbody2D>().velocity = moveVel;
         
         List<UserVariable> userVariables = new List<UserVariable>();
-        userVariables.Add(new SFSUserVariable("vely", (double)moveVel.y));
+        userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 
@@ -162,8 +161,8 @@ public class GameManager : MonoBehaviour
 
         // we update local player vars to let new entered user know where we are
         List<UserVariable> userVariables = new List<UserVariable>();
-        userVariables.Add(new SFSUserVariable("posx", (double)localPlayer.transform.position.x));
-        userVariables.Add(new SFSUserVariable("posy", (double)localPlayer.transform.position.y));
+        userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
+        userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 
@@ -197,12 +196,12 @@ public class GameManager : MonoBehaviour
         }
 
         //trace("(" + user.Name + ") Changed its vars!");
-        if (changedVars.Contains("posx") || changedVars.Contains("posy"))
-            remotePlayer.transform.position = new Vector3((float)user.GetVariable("posx").GetDoubleValue(), (float)user.GetVariable("posy").GetDoubleValue(), 0);
-        if (changedVars.Contains("velx"))
-            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
+        if (changedVars.Contains("px") || changedVars.Contains("py"))
+            remotePlayer.transform.position = new Vector3((float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue(), 0);
+        if (changedVars.Contains("vx"))
+            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("vx").GetDoubleValue(), (float)user.GetVariable("vy").GetDoubleValue(), 0);
         if (changedVars.Contains("vely"))
-            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("velx").GetDoubleValue(), (float)user.GetVariable("vely").GetDoubleValue(), 0);
+            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("vx").GetDoubleValue(), (float)user.GetVariable("vy").GetDoubleValue(), 0);
 
         if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
             remotePlayer.GetComponent<Animator>().SetBool("Running", false);
@@ -211,9 +210,9 @@ public class GameManager : MonoBehaviour
             remotePlayer.GetComponent<Animator>().SetBool("Running", true);
         }
 
-        // Redirecting player direction
-        if (user.GetVariable("velx").GetDoubleValue() != 0)
-            remotePlayerDirection = (user.GetVariable("velx").GetDoubleValue() < 0) ? false : true;
+        // Redirecting remote player direction
+        if (user.GetVariable("vx").GetDoubleValue() != 0)
+            remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
         Vector3 trueDirection = new Vector3(remotePlayerDirection ? 1 : -1, 1, 1);
         remotePlayer.GetComponent<Transform>().localScale = trueDirection;
         remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
