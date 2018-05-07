@@ -1,20 +1,31 @@
-﻿using System.Collections;
+﻿using Sfs2X;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class followPlayer : MonoBehaviour {
 
     public float depthOfView = -10;
 
+    private SmartFox sfs;
     private Transform cameraTrans;
     private Transform playerTrans;
 
-	void Start () {
+	void Start ()
+    {
+        if (!SmartFoxConnection.IsInitialized)
+        {
+            Debug.Log("SFS not initialized!");
+            SceneManager.LoadScene("Connection");
+            return;
+        }
         cameraTrans = GetComponent<Transform>();
         playerTrans = GameObject.Find("localPlayer(Clone)").GetComponent<Transform>();
 	}
 	
 	void Update () {
-        cameraTrans.position = new Vector3(playerTrans.position.x, 0, depthOfView);
+        if(playerTrans != null)
+            cameraTrans.position = new Vector3(playerTrans.position.x, 0, depthOfView);
 	}
 }

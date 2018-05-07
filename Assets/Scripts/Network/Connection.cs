@@ -39,8 +39,8 @@ public class Connection : MonoBehaviour {
         //okBtn = GameObject.Find("Button").GetComponent<Button>();
         inputField = GameObject.Find("InputField").GetComponent<InputField>();
         inputField.text = serverIP;
-
-        sfs = new SmartFox();
+        
+            sfs = new SmartFox();
 
         // Set ThreadSafeMode explicitly, or Windows Store builds will get a wrong default value (false)
         sfs.ThreadSafeMode = true;
@@ -66,9 +66,12 @@ public class Connection : MonoBehaviour {
     void Update () 
 	{
         if (sfs != null)
+        {
             sfs.ProcessEvents();
+        }
         else if (!popUp.activeInHierarchy)
             popUp.SetActive(true);
+        
     }
     public void startSmartfox()
     {
