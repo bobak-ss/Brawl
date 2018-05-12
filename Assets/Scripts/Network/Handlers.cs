@@ -17,22 +17,11 @@ public class Handlers : MonoBehaviour {
     void Start ()
     {
         gm = GetComponent<GameManager>();
-        log = GameObject.Find("LogsObject/Log").GetComponent<Text>();
 
-        gm.trace("Handlers script has been started!");
-        if (!SmartFoxConnection.IsInitialized)
-        {
-            gm.trace("SFS not initialized! in Handlers");
-            SceneManager.LoadScene("Connection");
-            return;
-        }
-
-        sfs = SmartFoxConnection.Connection;
+        sfs = gm.startSmartFox();
 
         if (sfs.IsConnected)
         {
-            gm.trace("sfs is connected in Handlers ");
-
             sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, userEnterRoomHandler);
             sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, userExitRoomHandler);
             sfs.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, userVarUpdateHandler);
@@ -43,15 +32,17 @@ public class Handlers : MonoBehaviour {
         }
 
         if (gm.localPlayer == null)
-        {
             gm.SpawnLocalPlayer();
-        }
     }
 	
 	void Update () {
         if (sfs != null)
         {
             sfs.ProcessEvents();
+        }
+        else
+        {
+            sfs = gm.startSmartFox();
         }
     }
 
@@ -63,23 +54,28 @@ public class Handlers : MonoBehaviour {
     {
         SFSUser user = (SFSUser)evt.Params["user"];
         gm.trace("(" + user.Name + ") Entered the room!");
-        
-        gm.SpawnRemotePlayer(user);
 
         // we update local player vars to let new entered user know where we are
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("px", (double) gm.localPlayer.transform.position.x));
         userVariables.Add(new SFSUserVariable("py", (double) gm.localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
+
+        gm.SpawnRemotePlayer(user);
     }
 
     private void userExitRoomHandler(BaseEvent evt)
     {
         SFSUser user = (SFSUser)evt.Params["user"];
         gm.trace("(" + user.Name + ") Exited the room!");
+
+        // Destroy exited player
         if (gm.remotePlayers.ContainsKey(user))
         {
+            // Destroy game object
             Destroy(gm.remotePlayers[user]);
+
+            // Remove  from remote players list
             gm.remotePlayers.Remove(user);
         }
     }
@@ -92,17 +88,21 @@ public class Handlers : MonoBehaviour {
         GameObject remotePlayer;
         bool remotePlayerDirection = true;
 
+        // Exit from funciton if user is the local player himself
         if (user == sfs.MySelf) return;
 
+        // Get remote player form list
         if (gm.remotePlayers.ContainsKey(user))
             remotePlayer = gm.remotePlayers[user];
-        else
+        else // Spawn remote player if it's not ins the list
         {
             gm.SpawnRemotePlayer(user);
             remotePlayer = gm.remotePlayers[user];
         }
 
         //gm.trace("(" + user.Name + ") Changed its vars!");
+
+        // Change remote player's position and velocity on change
         if (changedVars.Contains("px") || changedVars.Contains("py"))
             remotePlayer.transform.position = new Vector3((float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue(), 0);
         if (changedVars.Contains("vx"))
@@ -110,6 +110,7 @@ public class Handlers : MonoBehaviour {
         if (changedVars.Contains("vely"))
             remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("vx").GetDoubleValue(), (float)user.GetVariable("vy").GetDoubleValue(), 0);
 
+        // Change remote player's animation based on velocity
         if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
             remotePlayer.GetComponent<Animator>().SetBool("Running", false);
         else
@@ -124,6 +125,7 @@ public class Handlers : MonoBehaviour {
         remotePlayer.GetComponent<Transform>().localScale = trueDirection;
         remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
     }
+
     private void proximityListUpdateHandler(BaseEvent e)
     {
         var addedUsers = (List<User>)e.Params["addedUsers"];
