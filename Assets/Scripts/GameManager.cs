@@ -22,16 +22,16 @@ public class GameManager : MonoBehaviour
     public GameObject remotePlayerObj;
     public LayerMask layerMask;
     public float speed = 100f, jumpVelocity = 50f;
+    public GameObject localPlayer = null;
+    public Dictionary<User, GameObject> remotePlayers = new Dictionary<User, GameObject>();
 
     //----------------------------------------------------------
     // Private properties
     //----------------------------------------------------------
 
-    private SmartFox sfs;
-    private GameObject localPlayer = null;
+    private static SmartFox sfs;
     private Boolean localPlayerIsGrounded = true;
     private Boolean localPlayerDirection = true;
-    private Dictionary<User, GameObject> remotePlayers = new Dictionary<User, GameObject>();
     private static Text log;
 
     //----------------------------------------------------------
@@ -40,7 +40,7 @@ public class GameManager : MonoBehaviour
         
     void Start()
     {
-        log = GameObject.Find("LogsObject").AddComponent<Text>();
+        log = GameObject.Find("LogsObject/Log").GetComponent<Text>();
 
         if (!SmartFoxConnection.IsInitialized)
         {
@@ -54,14 +54,6 @@ public class GameManager : MonoBehaviour
         if(sfs.IsConnected)
         {
             trace("sfs is connected in game manager");
-            
-            sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, userEnterRoomHandler);
-            sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, userExitRoomHandler);
-            sfs.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, userVarUpdateHandler);
-            sfs.AddEventListener(SFSEvent.PROXIMITY_LIST_UPDATE, proximityListUpdateHandler);
-            sfs.AddEventListener(SFSEvent.PUBLIC_MESSAGE, publicMessageHandler);
-            sfs.AddEventListener(SFSEvent.OBJECT_MESSAGE, messageHandler);
-            sfs.AddEventListener(SFSEvent.CONNECTION_LOST, lostConnectionHandler);
         }
 
         if (localPlayer == null)
@@ -92,7 +84,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ------------------------ Player Spawn Methods ------------------------
-    private void SpawnLocalPlayer()
+    public void SpawnLocalPlayer()
     {
         localPlayer = GameObject.Instantiate(localPlayerObj);
         localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-190f, 190f), 150f, 0);
@@ -103,7 +95,7 @@ public class GameManager : MonoBehaviour
         userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
-    private void SpawnRemotePlayer(User user)
+    public void SpawnRemotePlayer(User user)
     {
         GameObject remotePlayer;
 
@@ -135,127 +127,21 @@ public class GameManager : MonoBehaviour
         userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
+
     public void jump()
     {
         Vector2 moveVel = localPlayer.GetComponent<Rigidbody2D>().velocity;
-        
+        moveVel = new Vector3(localPlayer.GetComponent<Rigidbody2D>().velocity.x, localPlayer.GetComponent<Rigidbody2D>().velocity.y + jumpVelocity);
+
         if (localPlayerIsGrounded)
-            moveVel = new Vector3(localPlayer.GetComponent<Rigidbody2D>().velocity.x, localPlayer.GetComponent<Rigidbody2D>().velocity.y + jumpVelocity);
-        localPlayer.GetComponent<Rigidbody2D>().velocity = moveVel;
+            localPlayer.GetComponent<Rigidbody2D>().velocity = moveVel;
         
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 
-    //----------------------------------------------------------
-    // SmartFoxServer event listeners
-    //----------------------------------------------------------
-
-    private void userEnterRoomHandler(BaseEvent evt)
-    {
-        SFSUser user = (SFSUser)evt.Params["user"];
-        trace("(" + user.Name + ") Entered the room!");
-
-        SpawnRemotePlayer(user);
-
-        // we update local player vars to let new entered user know where we are
-        List<UserVariable> userVariables = new List<UserVariable>();
-        userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
-        userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
-        sfs.Send(new SetUserVariablesRequest(userVariables));
-    }
-
-    private void userExitRoomHandler(BaseEvent evt)
-    {
-        SFSUser user = (SFSUser)evt.Params["user"];
-        trace("(" + user.Name + ") Exited the room!");
-        if (remotePlayers.ContainsKey(user))
-        {
-            Destroy(remotePlayers[user]);
-            remotePlayers.Remove(user);
-        }
-    }
-    
-    private void userVarUpdateHandler(BaseEvent evt)
-    {
-        List<string> changedVars = (List<string>)evt.Params["changedVars"];
-
-        SFSUser user = (SFSUser)evt.Params["user"];
-        GameObject remotePlayer;
-        Boolean remotePlayerDirection = true;
-
-        if (user == sfs.MySelf) return;
-
-        if (remotePlayers.ContainsKey(user))
-            remotePlayer = remotePlayers[user];
-        else
-        {
-            SpawnRemotePlayer(user);
-            remotePlayer = remotePlayers[user];
-        }
-
-        //trace("(" + user.Name + ") Changed its vars!");
-        if (changedVars.Contains("px") || changedVars.Contains("py"))
-            remotePlayer.transform.position = new Vector3((float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue(), 0);
-        if (changedVars.Contains("vx"))
-            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("vx").GetDoubleValue(), (float)user.GetVariable("vy").GetDoubleValue(), 0);
-        if (changedVars.Contains("vely"))
-            remotePlayer.GetComponent<Rigidbody2D>().velocity = new Vector3((float)user.GetVariable("vx").GetDoubleValue(), (float)user.GetVariable("vy").GetDoubleValue(), 0);
-
-        if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
-            remotePlayer.GetComponent<Animator>().SetBool("Running", false);
-        else
-        {
-            remotePlayer.GetComponent<Animator>().SetBool("Running", true);
-        }
-
-        // Redirecting remote player direction
-        if (user.GetVariable("vx").GetDoubleValue() != 0)
-            remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
-        Vector3 trueDirection = new Vector3(remotePlayerDirection ? 1 : -1, 1, 1);
-        remotePlayer.GetComponent<Transform>().localScale = trueDirection;
-        remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
-    }
-    private void proximityListUpdateHandler(BaseEvent e)
-    {
-        var addedUsers = (List<User>) e.Params["addedUsers"];
-        var removedUsers = (List<User>) e.Params["removedUsers"];
-
-        // Handle new players
-        foreach (var user in addedUsers)
-        {
-            SpawnRemotePlayer(user);
-        }
-
-        // Handle removed players
-        foreach (var user in removedUsers)
-        {
-            remotePlayers.Remove(user);
-        }
-    }
-    private void publicMessageHandler(BaseEvent e)
-    {
-        //Debug.Log("!!! New PublicMessage !!!");
-        Room room = (Room)e.Params["room"];
-        User sender = (User)e.Params["sender"];
-        String msg = "[" + room.Name + "] " + sender.Name + ": " + e.Params["message"];
-        trace(msg);
-    }
-
-    private void lostConnectionHandler(BaseEvent evt)
-    {
-        trace("Lost Connection");
-        sfs.RemoveAllEventListeners();
-        SceneManager.LoadScene("Connection");
-    }
-
-    private void messageHandler(BaseEvent evt)
-    {
-        trace("Message Handler");
-    }
-
-    public static Text trace(string textString)
+    public void trace(string textString)
     {
         Debug.Log(textString);
         log.text += "\n-" + textString;
@@ -267,7 +153,5 @@ public class GameManager : MonoBehaviour
         log.color = new Color(0.058f, 0.450f, 0f);
         log.verticalOverflow = VerticalWrapMode.Overflow;
         log.alignByGeometry = true;
-
-        return log;
     }
 }
