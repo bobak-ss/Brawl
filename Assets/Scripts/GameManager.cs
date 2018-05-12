@@ -146,6 +146,8 @@ public class GameManager : MonoBehaviour
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("vx", (double)moveVel.x));
         userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
+        userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
+        userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 
@@ -163,6 +165,8 @@ public class GameManager : MonoBehaviour
         // Change vertical velocity by seting y velocity variable
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("vy", (double)moveVel.y));
+        userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
+        userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 

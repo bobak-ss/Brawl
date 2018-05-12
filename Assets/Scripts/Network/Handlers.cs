@@ -119,8 +119,9 @@ public class Handlers : MonoBehaviour {
         }
 
         // Redirecting remote player direction
-        if (user.GetVariable("vx").GetDoubleValue() != 0)
-            remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
+        if(user.ContainsVariable("vx"))
+            if (user.GetVariable("vx").GetDoubleValue() != 0)
+                remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
         Vector3 trueDirection = new Vector3(remotePlayerDirection ? 1 : -1, 1, 1);
         remotePlayer.GetComponent<Transform>().localScale = trueDirection;
         remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
