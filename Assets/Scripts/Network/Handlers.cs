@@ -13,6 +13,7 @@ public class Handlers : MonoBehaviour {
     private static Text log;
     private SmartFox sfs;
     private GameManager gm;
+    bool remotePlayerDirection = true;
 
     void Start ()
     {
@@ -86,7 +87,6 @@ public class Handlers : MonoBehaviour {
 
         SFSUser user = (SFSUser)evt.Params["user"];
         GameObject remotePlayer;
-        bool remotePlayerDirection = true;
 
         // Exit from funciton if user is the local player himself
         if (user == sfs.MySelf) return;
@@ -114,17 +114,18 @@ public class Handlers : MonoBehaviour {
         if (remotePlayer.GetComponent<Rigidbody2D>().velocity.x == 0 && remotePlayer.GetComponent<Rigidbody2D>().velocity.y == 0)
             remotePlayer.GetComponent<Animator>().SetBool("Running", false);
         else
-        {
             remotePlayer.GetComponent<Animator>().SetBool("Running", true);
-        }
+
 
         // Redirecting remote player direction
-        if(user.ContainsVariable("vx"))
-            if (user.GetVariable("vx").GetDoubleValue() != 0)
-                remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
+        if(remotePlayer.GetComponent<Rigidbody2D>().velocity.x != 0)
+            remotePlayerDirection = (remotePlayer.GetComponent<Rigidbody2D>().velocity.x < 0) ? false : true;
         Vector3 trueDirection = new Vector3(remotePlayerDirection ? 1 : -1, 1, 1);
         remotePlayer.GetComponent<Transform>().localScale = trueDirection;
         remotePlayer.transform.FindChild("name").GetComponent<Transform>().localScale = trueDirection;
+        //if(user.ContainsVariable("vx"))
+        //    if (user.GetVariable("vx").GetDoubleValue() != 0)
+        //        remotePlayerDirection = (user.GetVariable("vx").GetDoubleValue() < 0) ? false : true;
     }
 
     private void proximityListUpdateHandler(BaseEvent e)
