@@ -20,8 +20,9 @@ public class Connection : MonoBehaviour {
 	public string UserName = "bss";
 	public string Password = "";
 	public string ZoneName = "brawl";
+    public string roomName = "arena";
 
-	public static SmartFox sfs;
+    public static SmartFox sfs;
     public static User localUser = null;
     
     static private Text log;
@@ -142,9 +143,7 @@ public class Connection : MonoBehaviour {
     // Login Handlers
     void loginHandler(BaseEvent e)
     {
-        trace("Successfully logged into zone! user: " + e.Params["user"]);
-
-        string roomName = "arena";
+        trace("user[" + e.Params["user"] + "] Successfully logged into zone!");
 
         // We either create the Game Room or join it if it exists already
         if (sfs.RoomManager.ContainsRoom(roomName))
@@ -156,8 +155,8 @@ public class Connection : MonoBehaviour {
         {
             trace("GameRoom does not exists! creating the room... Joining the room...");
             MMORoomSettings settings = new MMORoomSettings(roomName);
-            settings.DefaultAOI = new Vec3D(200f, 100f, 1f);
-            settings.MapLimits = new MapLimits(new Vec3D(-225f, -125f, 1f), new Vec3D(225f, 125f, 1f));
+            settings.DefaultAOI = new Vec3D(300f, 180f, 0f);
+            settings.MapLimits = new MapLimits(new Vec3D(-500f, -220f, 0f), new Vec3D(500f, 220f, 0f));
             settings.MaxUsers = 10;
             settings.Extension = new RoomExtension("Brawl", "com.xplosion.BrawlExtension");
             sfs.Send(new CreateRoomRequest(settings, true));
@@ -185,7 +184,7 @@ public class Connection : MonoBehaviour {
     }
     private void roomAddHandler(BaseEvent e)
     {
-        retrySrvFail("Adding room[" + e.Params["room"] + "] was successfull!");
+        trace("Adding room[" + e.Params["room"] + "] was successfull!");
     }
     private void roomCreationErrorHandler(BaseEvent e)
     {

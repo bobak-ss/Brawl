@@ -144,6 +144,7 @@ public class Handlers : MonoBehaviour {
         foreach (var user in removedUsers)
         {
             gm.trace("user[" + user.Name + "] REMOVED!");
+            Destroy(gm.remotePlayers[user]);
             gm.remotePlayers.Remove(user);
         }
     }
