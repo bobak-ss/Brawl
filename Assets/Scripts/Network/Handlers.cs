@@ -74,7 +74,7 @@ public class Handlers : MonoBehaviour {
         if (gm.remotePlayers.ContainsKey(user))
         {
             // Destroy game object
-            gm.destroyPlayer(gm.remotePlayers[user]);
+            gm.killRemotePlayer(user);
 
             // Remove  from remote players list
             gm.remotePlayers.Remove(user);

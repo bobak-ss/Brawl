@@ -171,19 +171,27 @@ public class GameManager : MonoBehaviour
     }
 
     // Destroy and exit player and show Game Over Message
-    public void destroyPlayer(GameObject player)
+    public void killLocalPlayer()
     {
         var gameOverTxt = GameObject.Find("LogsObject/GameOverTxt").GetComponent<Text>();
-        player.transform.Rotate(0f, 0f, -90f);
+        localPlayer.transform.Rotate(0f, 0f, -90f);
         sfs.Send(new LeaveRoomRequest());
-        player.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
-        player.transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
-        player.transform.FindChild("name").GetComponent<Text>().color = Color.red;
-        Destroy(player.GetComponent<Animator>());
-        player = null;
+        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
+        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
+        localPlayer.transform.FindChild("name").GetComponent<Text>().color = Color.red;
+        Destroy(localPlayer.GetComponent<Animator>());
+        localPlayer = null;
         gameOverTxt.color = new Color(1f, 0f, 0f, 1f);
     }
-
+    internal void killRemotePlayer(SFSUser user)
+    {
+        remotePlayers[user].transform.Rotate(0f, 0f, -90f);
+        remotePlayers[user].transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
+        remotePlayers[user].transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
+        remotePlayers[user].transform.FindChild("name").GetComponent<Text>().color = Color.red;
+        Destroy(remotePlayers[user].GetComponent<Animator>());
+        remotePlayers[user] = null;
+    }
     // A function to log on debugger and in game log viewer
     public void trace(string textString)
     {
