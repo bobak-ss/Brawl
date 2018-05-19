@@ -5,8 +5,8 @@ using UnityEngine;
 public class DestroyOffscreen : MonoBehaviour
 {
 
-    public float offScreenX = 100f;
-    public float offScreenY = 100f;
+    public float offScreenX = 300f;
+    public float offScreenY = 300f;
 
     private float playerX;
     private float playerY;

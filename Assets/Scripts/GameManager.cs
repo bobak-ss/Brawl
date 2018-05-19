@@ -104,7 +104,7 @@ public class GameManager : MonoBehaviour
     public void SpawnLocalPlayer()
     {
         localPlayer = GameObject.Instantiate(localPlayerObj);
-        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-190f, 190f), 90f, 0);
+        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-280f, 280f), 80f, 0);
         localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
         // Set user position variables when local player spawned
