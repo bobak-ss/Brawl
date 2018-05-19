@@ -171,16 +171,16 @@ public class GameManager : MonoBehaviour
     }
 
     // Destroy and exit player and show Game Over Message
-    public void destroyLocalPlayer(GameObject player)
+    public void destroyPlayer(GameObject player)
     {
         var gameOverTxt = GameObject.Find("LogsObject/GameOverTxt").GetComponent<Text>();
-        localPlayer.transform.Rotate(0f, 0f, -90f);
+        player.transform.Rotate(0f, 0f, -90f);
         sfs.Send(new LeaveRoomRequest());
-        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
-        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
-        localPlayer.transform.FindChild("name").GetComponent<Text>().color = Color.red;
-        Destroy(localPlayer.GetComponent<Animator>());
-        localPlayer = null;
+        player.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
+        player.transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
+        player.transform.FindChild("name").GetComponent<Text>().color = Color.red;
+        Destroy(player.GetComponent<Animator>());
+        player = null;
         gameOverTxt.color = new Color(1f, 0f, 0f, 1f);
     }
 

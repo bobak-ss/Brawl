@@ -27,7 +27,7 @@ public class DestroyOffscreen : MonoBehaviour
             if (playerX > offScreenX || playerY > offScreenY)
             {
                 gm.trace("You Died!");
-                gm.destroyLocalPlayer(gm.localPlayer);
+                gm.destroyPlayer(gm.localPlayer);
             }
         }
     }
