@@ -104,7 +104,7 @@ public class GameManager : MonoBehaviour
     public void SpawnLocalPlayer()
     {
         localPlayer = GameObject.Instantiate(localPlayerObj);
-        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-190f, 190f), 150f, 0);
+        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-190f, 190f), 90f, 0);
         localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
         // Set user position variables when local player spawned
@@ -170,6 +170,19 @@ public class GameManager : MonoBehaviour
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
 
+    // Destroy and exit player and show Game Over Message
+    public void destroyLocalPlayer(GameObject player)
+    {
+        var gameOverTxt = GameObject.Find("LogsObject/GameOverTxt").GetComponent<Text>();
+        localPlayer.transform.Rotate(0f, 0f, -90f);
+        sfs.Send(new LeaveRoomRequest());
+        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);
+        localPlayer.transform.FindChild("name").GetComponent<RectTransform>().anchoredPosition = new Vector3(20f, -16f, 0);
+        localPlayer.transform.FindChild("name").GetComponent<Text>().color = Color.red;
+        Destroy(localPlayer.GetComponent<Animator>());
+        localPlayer = null;
+        gameOverTxt.color = new Color(1f, 0f, 0f, 1f);
+    }
 
     // A function to log on debugger and in game log viewer
     public void trace(string textString)
@@ -180,7 +193,7 @@ public class GameManager : MonoBehaviour
         Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
         log.font = ArialFont;
         log.material = ArialFont.material;
-        log.fontSize = 7;
+        log.fontSize = 17;
         log.color = new Color(0.058f, 0.450f, 0f);
         log.verticalOverflow = VerticalWrapMode.Overflow;
         log.alignByGeometry = true;

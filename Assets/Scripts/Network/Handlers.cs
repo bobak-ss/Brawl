@@ -13,7 +13,7 @@ public class Handlers : MonoBehaviour {
     private static Text log;
     private SmartFox sfs;
     private GameManager gm;
-    bool remotePlayerDirection = true;
+    private bool remotePlayerDirection = true;
 
     void Start ()
     {
@@ -136,12 +136,14 @@ public class Handlers : MonoBehaviour {
         // Handle new players
         foreach (var user in addedUsers)
         {
+            gm.trace("user[" + user.Name + "] ADDED!");
             gm.SpawnRemotePlayer(user);
         }
 
         // Handle removed players
         foreach (var user in removedUsers)
         {
+            gm.trace("user[" + user.Name + "] REMOVED!");
             gm.remotePlayers.Remove(user);
         }
     }
