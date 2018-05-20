@@ -76,7 +76,7 @@ public class Handlers : MonoBehaviour {
             // Destroy game object
             gm.killRemotePlayer(user);
 
-            // Remove  from remote players list
+            // Remove from remote players list
             gm.remotePlayers.Remove(user);
         }
     }
