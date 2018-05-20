@@ -192,6 +192,12 @@ public class GameManager : MonoBehaviour
         Destroy(remotePlayers[user].GetComponent<Animator>());
         remotePlayers[user] = null;
     }
+
+    // Special btn function
+    public void specialBtn()
+    {
+        trace("Speciaaaaaaaaaaal!!!");
+    }
     // A function to log on debugger and in game log viewer
     public void trace(string textString)
     {
