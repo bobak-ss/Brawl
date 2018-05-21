@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     // Public properties
     //----------------------------------------------------------
 
+    public Text log;
     public GameObject localPlayerObj;
     public GameObject remotePlayerObj;
     public LayerMask layerMask;
@@ -32,7 +33,6 @@ public class GameManager : MonoBehaviour
     private static SmartFox sfs;
     private Boolean localPlayerIsGrounded = true;
     private Boolean localPlayerDirection = true;
-    private static Text log;
 
     //----------------------------------------------------------
     // Unity calback methods
@@ -40,9 +40,6 @@ public class GameManager : MonoBehaviour
         
     void Start()
     {
-        // Find log panel in game to write game logs
-        log = GameObject.Find("LogsObject/Log").GetComponent<Text>();
-        
         sfs = startSmartFox();
 
         if(sfs.IsConnected)
