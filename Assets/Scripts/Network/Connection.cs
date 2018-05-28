@@ -176,7 +176,7 @@ public class Connection : MonoBehaviour {
         // Remove SFS2X listeners
         sfs.RemoveAllEventListeners();
         
-        SceneManager.LoadScene("GameStaging");
+        SceneManager.LoadScene("Menu");
     }
     private void roomJoinErrorHandler(BaseEvent e)
     {

@@ -12,13 +12,11 @@ public class Handlers : MonoBehaviour {
 
     private static Text log;
     private SmartFox sfs;
-    private GameManager gm;
     private bool remotePlayerDirection = true;
+    private GameManager gm = GameManager.Instance;
 
     void Start ()
     {
-        gm = GetComponent<GameManager>();
-
         sfs = gm.startSmartFox();
 
         if (sfs.IsConnected)

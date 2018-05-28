@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using UnityStandardAssets.CrossPlatformInput;
 using Sfs2X;
 using Sfs2X.Core;
@@ -8,28 +10,44 @@ using Sfs2X.Entities;
 using Sfs2X.Entities.Data;
 using Sfs2X.Entities.Variables;
 using Sfs2X.Requests;
-using System;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour 
+public class GameManager : MonoBehaviour
 {
+    //----------------------------------------------------------
+    // Singletone class
+    //----------------------------------------------------------
+
+    private static GameManager _instance;
+    public static GameManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                GameObject go = new GameObject("GameManager");
+                go.AddComponent<GameManager>();
+                DontDestroyOnLoad(go);
+            }
+            return _instance;
+        }
+    }
+
     //----------------------------------------------------------
     // Public properties
     //----------------------------------------------------------
 
-    public Text log;
-    public GameObject localPlayerObj;
-    public GameObject remotePlayerObj;
     public LayerMask layerMask;
-    public float speed = 100f, jumpVelocity = 50f;
+    public float speed = 100f, jumpVelocity = 350f;
     public GameObject localPlayer = null;
     public Dictionary<User, GameObject> remotePlayers = new Dictionary<User, GameObject>();
+    public GameObject localPlayerPrefab;
+    public GameObject remotePlayerPrefab;
 
     //----------------------------------------------------------
     // Private properties
     //----------------------------------------------------------
 
+    private Text log;
     private static SmartFox sfs;
     private Boolean localPlayerIsGrounded = true;
     private Boolean localPlayerDirection = true;
@@ -37,16 +55,26 @@ public class GameManager : MonoBehaviour
     //----------------------------------------------------------
     // Unity calback methods
     //----------------------------------------------------------
-        
+
+    void Awake()
+    {
+        if(_instance == null)
+        {
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+    }
+
     void Start()
     {
+        log = GameObject.Find("Canvas/ScrollArea/TextContainer/Log").GetComponent<Text>();
         sfs = startSmartFox();
 
         if(sfs.IsConnected)
         {
             trace("sfs is connected in game manager");
         }
-        
+
         if (localPlayer == null)
         {
             SpawnLocalPlayer();
@@ -62,7 +90,7 @@ public class GameManager : MonoBehaviour
             {
                 // Cast a line from player to isGrounded game object to tell if the player is on something or not 
                 // (removed player object from layer mask to avoid line cast with player coliders)
-                localPlayerIsGrounded = Physics2D.Linecast(localPlayer.GetComponent<Transform>().position, localPlayer.transform.FindChild("isGrounded").transform.position, layerMask);
+                localPlayerIsGrounded = true;
 
                 // Get input for movement and jump
                 move(CrossPlatformInputManager.GetAxisRaw("Horizontal"));
@@ -100,8 +128,8 @@ public class GameManager : MonoBehaviour
     // ------------------------ Player Spawn Methods ------------------------
     public void SpawnLocalPlayer()
     {
-        localPlayer = GameObject.Instantiate(localPlayerObj);
-        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-280f, 280f), 80f, 0);
+        localPlayer = GameObject.Instantiate(localPlayerPrefab);
+        localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-230f, 75f), 80f, 0);
         localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
         // Set user position variables when local player spawned
@@ -115,9 +143,9 @@ public class GameManager : MonoBehaviour
         GameObject remotePlayer;
 
         // Get random position for new user
-        remotePlayerObj.transform.position = new Vector3( (float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue() );
+        remotePlayerPrefab.transform.position = new Vector3( (float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue() );
 
-        remotePlayer = GameObject.Instantiate(remotePlayerObj);
+        remotePlayer = GameObject.Instantiate(remotePlayerPrefab);
         remotePlayer.transform.FindChild("name").GetComponent<Text>().text = user.Name;
         remotePlayers.Add(user, remotePlayer);
     }
@@ -150,6 +178,7 @@ public class GameManager : MonoBehaviour
 
     public void jump()
     {
+        Debug.Log("Jump!!!!!");
         // Get player velocity
         Vector2 moveVel = localPlayer.GetComponent<Rigidbody2D>().velocity;
         // Add jump to player current velocity
@@ -170,7 +199,7 @@ public class GameManager : MonoBehaviour
     // Destroy and exit player and show Game Over Message
     public void killLocalPlayer()
     {
-        var gameOverTxt = GameObject.Find("LogsObject/GameOverTxt").GetComponent<Text>();
+        var gameOverTxt = GameObject.Find("Canvas/GameOverTxt").GetComponent<Text>();
         localPlayer.transform.Rotate(0f, 0f, -90f);
         sfs.Send(new LeaveRoomRequest());
         localPlayer.transform.FindChild("name").GetComponent<RectTransform>().Rotate(0, 0, -90);

@@ -11,12 +11,7 @@ public class DestroyOffscreen : MonoBehaviour
     private float playerX;
     private float playerY;
 
-    private GameManager gm = null;
-
-    void Start()
-    {
-        gm = GetComponent<GameManager>();
-    }
+    private GameManager gm = GameManager.Instance;
 
     void Update()
     {
