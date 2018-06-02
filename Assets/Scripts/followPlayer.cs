@@ -21,7 +21,7 @@ public class followPlayer : MonoBehaviour {
             return;
         }
         cameraTrans = GetComponent<Transform>();
-        playerTrans = GameObject.Find("localPlayer(Clone)").GetComponent<Transform>();
+        playerTrans = GameManager.Instance.localPlayer.GetComponent<Transform>();
 	}
 	
 	void Update () {

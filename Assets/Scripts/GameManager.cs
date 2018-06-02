@@ -13,25 +13,18 @@ using Sfs2X.Requests;
 
 public class GameManager : MonoBehaviour
 {
-    //----------------------------------------------------------
-    // Singletone class
-    //----------------------------------------------------------
-
-    private static GameManager _instance;
-    public static GameManager Instance
+    public static GameManager Instance { get; private set; }
+    void Awake()
     {
-        get
+        if (Instance == null)
         {
-            if (_instance == null)
-            {
-                GameObject go = new GameObject("GameManager");
-                go.AddComponent<GameManager>();
-                DontDestroyOnLoad(go);
-            }
-            return _instance;
+            Instance = this;
+            trace("Instance is null!");
+            SceneManager.LoadScene("Connection");
         }
+        else
+            trace("WARNING!: multiple instances of game manager!");
     }
-
     //----------------------------------------------------------
     // Public properties
     //----------------------------------------------------------
@@ -40,8 +33,8 @@ public class GameManager : MonoBehaviour
     public float speed = 100f, jumpVelocity = 350f;
     public GameObject localPlayer = null;
     public Dictionary<User, GameObject> remotePlayers = new Dictionary<User, GameObject>();
-    public GameObject localPlayerPrefab;
-    public GameObject remotePlayerPrefab;
+    public GameObject[] playerPrefabs;
+    public int playerPrefabNumber;
 
     //----------------------------------------------------------
     // Private properties
@@ -55,29 +48,14 @@ public class GameManager : MonoBehaviour
     //----------------------------------------------------------
     // Unity calback methods
     //----------------------------------------------------------
-
-    void Awake()
-    {
-        if(_instance == null)
-        {
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-    }
-
     void Start()
     {
-        log = GameObject.Find("Canvas/ScrollArea/TextContainer/Log").GetComponent<Text>();
-        sfs = startSmartFox();
-
-        if(sfs.IsConnected)
-        {
-            trace("sfs is connected in game manager");
-        }
+        //log = GameObject.Find("Canvas/ScrollArea/TextContainer/Log").GetComponent<Text>();
+        //sfs = startSmartFox();
 
         if (localPlayer == null)
         {
-            SpawnLocalPlayer();
+            //SpawnLocalPlayer();
         }
     }
 
@@ -104,9 +82,9 @@ public class GameManager : MonoBehaviour
                     localPlayer.GetComponent<Animator>().SetBool("Running", true);
             }
         }
-        else
+        else if(SmartFoxConnection.IsInitialized)
         {
-            sfs = startSmartFox();
+            sfs = SmartFoxConnection.Connection;
         }
     }
 
@@ -117,7 +95,7 @@ public class GameManager : MonoBehaviour
             trace("SFS not initialized!");
 
             // if connection is not initialized we start it by loading connection scene
-            SceneManager.LoadScene("Connection");
+            SceneManager.LoadScene("_preload");
             return null;
         }
 
@@ -128,7 +106,7 @@ public class GameManager : MonoBehaviour
     // ------------------------ Player Spawn Methods ------------------------
     public void SpawnLocalPlayer()
     {
-        localPlayer = GameObject.Instantiate(localPlayerPrefab);
+        localPlayer = GameObject.Instantiate(playerPrefabs[playerPrefabNumber]);
         localPlayer.transform.position = new Vector3(UnityEngine.Random.Range(-230f, 75f), 80f, 0);
         localPlayer.transform.FindChild("name").GetComponent<Text>().text = Connection.localUser.Name;
 
@@ -136,6 +114,7 @@ public class GameManager : MonoBehaviour
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("px", (double)localPlayer.transform.position.x));
         userVariables.Add(new SFSUserVariable("py", (double)localPlayer.transform.position.y));
+        userVariables.Add(new SFSUserVariable("mo", playerPrefabNumber));
         sfs.Send(new SetUserVariablesRequest(userVariables));
     }
     public void SpawnRemotePlayer(User user)
@@ -143,9 +122,9 @@ public class GameManager : MonoBehaviour
         GameObject remotePlayer;
 
         // Get random position for new user
-        remotePlayerPrefab.transform.position = new Vector3( (float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue() );
+        playerPrefabs[user.GetVariable("mo").GetIntValue()].transform.position = new Vector3( (float)user.GetVariable("px").GetDoubleValue(), (float)user.GetVariable("py").GetDoubleValue() );
 
-        remotePlayer = GameObject.Instantiate(remotePlayerPrefab);
+        remotePlayer = GameObject.Instantiate(playerPrefabs[user.GetVariable("mo").GetIntValue()]);
         remotePlayer.transform.FindChild("name").GetComponent<Text>().text = user.Name;
         remotePlayers.Add(user, remotePlayer);
     }
@@ -228,14 +207,16 @@ public class GameManager : MonoBehaviour
     public void trace(string textString)
     {
         Debug.Log(textString);
-        log.text += "\n-" + textString;
-
-        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
-        log.font = ArialFont;
-        log.material = ArialFont.material;
-        log.fontSize = 17;
-        log.color = new Color(0.058f, 0.450f, 0f);
-        log.verticalOverflow = VerticalWrapMode.Overflow;
-        log.alignByGeometry = true;
+        if(log != null)
+        {
+            Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+            log.text += "\n-" + textString;
+            log.font = ArialFont;
+            log.material = ArialFont.material;
+            log.fontSize = 17;
+            log.color = new Color(0.058f, 0.450f, 0f);
+            log.verticalOverflow = VerticalWrapMode.Overflow;
+            log.alignByGeometry = true;
+        }
     }
 }

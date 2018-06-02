@@ -58,6 +58,7 @@ public class Handlers : MonoBehaviour {
         List<UserVariable> userVariables = new List<UserVariable>();
         userVariables.Add(new SFSUserVariable("px", (double) gm.localPlayer.transform.position.x));
         userVariables.Add(new SFSUserVariable("py", (double) gm.localPlayer.transform.position.y));
+        userVariables.Add(new SFSUserVariable("mo", gm.playerPrefabNumber));
         sfs.Send(new SetUserVariablesRequest(userVariables));
 
         gm.SpawnRemotePlayer(user);
@@ -71,10 +72,8 @@ public class Handlers : MonoBehaviour {
         // Destroy exited player
         if (gm.remotePlayers.ContainsKey(user))
         {
-            // Destroy game object
+            // Destroy game object And remove from list
             gm.killRemotePlayer(user);
-
-            // Remove from remote players list
             gm.remotePlayers.Remove(user);
         }
     }

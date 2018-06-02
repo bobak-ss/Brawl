@@ -21,27 +21,18 @@ public class Connection : MonoBehaviour {
 	public string Password = "";
 	public string ZoneName = "brawl";
     public string roomName = "arena";
+    public Text log;
+    public GameObject popUp;
+    public Text errorText;
+    public InputField inputField;
 
     public static SmartFox sfs;
     public static User localUser = null;
-    
-    static private Text log;
-    private GameObject popUp;
-    private Text errorText;
-    //private Button okBtn;
-    private InputField inputField;
-
 
     void Start ()
     {
-        log = GameObject.Find("LogsObject").AddComponent<Text>();
-        popUp = GameObject.Find("PopUp");
-        errorText = GameObject.Find("ErrorTxt").GetComponent<Text>();
-        //okBtn = GameObject.Find("Button").GetComponent<Button>();
-        inputField = GameObject.Find("InputField").GetComponent<InputField>();
         inputField.text = serverIP;
-        
-            sfs = new SmartFox();
+        sfs = new SmartFox();
 
         // Set ThreadSafeMode explicitly, or Windows Store builds will get a wrong default value (false)
         sfs.ThreadSafeMode = true;
@@ -191,20 +182,21 @@ public class Connection : MonoBehaviour {
         retrySrvFail("ERROR: Creating room[" + e.Params["room"] + "] was NOT successfull!\nErrorCode:" + e.Params["error"] + " - " + e.Params["errorMessage"]);
     }
 
-    public static Text trace(string textString)
+    // A function to log on debugger and in game log viewer
+    public void trace(string textString)
     {
         Debug.Log(textString);
-        log.text += "\n-" + textString;
-
-        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
-        log.font = ArialFont;
-        log.material = ArialFont.material;
-        log.fontSize = 30;
-        log.color = new Color(0.058f, 1f, 0f);
-        log.verticalOverflow = VerticalWrapMode.Overflow;
-        log.alignByGeometry = true;
-
-        return log;
+        if (log != null)
+        {
+            Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+            log.text += "\n-" + textString;
+            log.font = ArialFont;
+            log.material = ArialFont.material;
+            log.fontSize = 17;
+            log.color = new Color(0.058f, 0.450f, 0f);
+            log.verticalOverflow = VerticalWrapMode.Overflow;
+            log.alignByGeometry = true;
+        }
     }
 
     private void retrySrvFail(String errorMsg)

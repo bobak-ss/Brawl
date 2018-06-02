@@ -11,7 +11,7 @@ public class PlayerManager : MonoBehaviour
 
     void Start()
     {
-        
+        player = gameObject;
     }
 
 	void Update ()
